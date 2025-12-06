@@ -174,6 +174,7 @@ static inline void v4l2_subscribe_eos_event(V4L2m2mContext *s)
 static int v4l2_prepare_encoder(V4L2m2mContext *s)
 {
     AVCodecContext *avctx = s->avctx;
+    V4L2m2mPriv *priv = s->priv;
     int qmin_cid, qmax_cid, qmin, qmax;
     int ret, val;
 
@@ -197,6 +198,8 @@ static int v4l2_prepare_encoder(V4L2m2mContext *s)
     v4l2_set_ext_ctrl(s, MPEG_CID(BITRATE) , avctx->bit_rate, "bit rate", 1);
     v4l2_set_ext_ctrl(s, MPEG_CID(FRAME_RC_ENABLE), 1, "frame level rate control", 0);
     v4l2_set_ext_ctrl(s, MPEG_CID(GOP_SIZE), avctx->gop_size,"gop size", 1);
+    if (priv->repeat_seq_header)
+        v4l2_set_ext_ctrl(s, MPEG_CID(REPEAT_SEQ_HEADER), 1, "repeat sequence headers", 1);
 
     av_log(avctx, AV_LOG_DEBUG,
         "Encoder Context: id (%d), profile (%d), frame rate(%d/%d), number b-frames (%d), "
@@ -392,7 +395,9 @@ static av_cold int v4l2_encode_close(AVCodecContext *avctx)
 #define V4L_M2M_CAPTURE_OPTS \
     V4L_M2M_DEFAULT_OPTS,\
     { "num_capture_buffers", "Number of buffers in the capture context", \
-        OFFSET(num_capture_buffers), AV_OPT_TYPE_INT, {.i64 = 4 }, 4, INT_MAX, FLAGS }
+        OFFSET(num_capture_buffers), AV_OPT_TYPE_INT, {.i64 = 4 }, 4, INT_MAX, FLAGS }, \
+    { "repeat_seq_header", "Insert sequence (PPS/SPS) headers inline", \
+        OFFSET(repeat_seq_header), AV_OPT_TYPE_BOOL, {.i64 = 0 }, 0, 1, FLAGS }
 
 static const AVOption mpeg4_options[] = {
     V4L_M2M_CAPTURE_OPTS,
